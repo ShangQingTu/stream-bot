@@ -27,13 +27,17 @@ conda activate blink37
 
 On our 32 server, you can enter`/home/tsq/stream-bot`
 
-run:
+run this to start mongodb  server :
+
+```
+/home/tsq/mongodb/bin/mongod --dbpath ./
+```
+
+run this to start the web page :
 
 ```
 streamlit run app.py
 ```
-
-to start server
 
 
 
