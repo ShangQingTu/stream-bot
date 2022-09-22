@@ -6,54 +6,51 @@ from bson.objectid import ObjectId
 
 class MongoDB(object):
 
-    def __init__(self):
-        # 连接MongoDB 方式一
-        # self.client = MongoClient(host='localhost', port=27017)
-        # 连接MongoDB 方式二
-        self.client = MongoClient("mongodb://tsq:liverpool@localhost:27017/?authSource=chatbot")
+    def __init__(self, db_name='edubot', collection_name='glm_base'):
+        self.client = MongoClient(f"mongodb://tsq:liverpool@localhost:27017/?authSource={db_name}")
         # 指定数据库
-        self.db = self.client['chatbot']
+        self.db = self.client[db_name]
+        self.collection = self.db[collection_name]
 
     # 添加一条数据
     def add_one(self, data):
-        # demo集合名字【表名】
-        result = self.db.demo.insert_one(data)
+        result = self.collection.insert_one(data)
         print(result)
 
     # 添加多条
     def add_many(self, data):
-        result = self.db.demo.insert_many(data)
+        result = self.collection.insert_many(data)
         print(result)
 
     # 获取一条数据
     def get_one(self):
-        return self.db.demo.find_one()
+        return self.collection.find_one()
 
     # 获取多条数据
     def get_many(self):
-        return self.db.demo.find()
+        return self.collection.find()
 
     # 通过条件获取
     def get_data(self, data):
-        return self.db.demo.find(data)
+        return self.collection.find(data)
 
     # 单条更新
     def up_one(self, query, data):
-        result = self.db.demo.update_one(query, data)
+        result = self.collection.update_one(query, data)
         print(result)
 
     # 多条更新
     def up_many(self, query, data):
-        result = self.db.demo.update_many(query, data, True)
+        result = self.collection.update_many(query, data, True)
         print(result)
 
     # 删除数据
     def del_one(self, query):
-        result = self.db.demo.delete_one(query)
+        result = self.collection.delete_one(query)
         print(result)
 
     def del_many(self, query):
-        result = self.db.demo.delete_many(query)
+        result = self.collection.delete_many(query)
         print(result)
 
 
