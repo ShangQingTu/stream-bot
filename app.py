@@ -20,8 +20,13 @@ def query(payload):
     if TEST_VERSION == "glm_base":
         prompt_str = build_prompt_for_glm(payload)
         payload = {"query": prompt_str, "limit": 30}
-    response = requests.post(API_URL, json=payload)
-    return response.json()
+        response = requests.post(API_URL, json=payload)
+        raw_str = response.json()['data']
+        final_response = raw_str.split("<|startofpiece|>")[-1]
+        return final_response
+    else:
+        response = requests.post(API_URL, json=payload)
+        return response.json()
 
 
 def get_text():

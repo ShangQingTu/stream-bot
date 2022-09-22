@@ -85,3 +85,9 @@ collection.insert_one({"title":"你好"})
 collection.find_one()
 ```
 
+返回的
+
+```
+{'code': 0, 'data': \"[CLS]|USER:晚安|BOT:{'code': 0, 'data': '[CLS]|USER:晚安|BOT:[gMASK]<|startofpiece|>|SERVER: /DATE:[DATE_LONG=2020-03-25]|PASS:[PASSWORD=GET', 'cost': 1.11320161819458, 'msg': 'okay'}|USER:你好|BOT:[gMASK]<|startofpiece|>{'site: node|HOST: 'GOD, Helios', 'path: '<|startofpiece|>'${GOD, Helios}', 'username: 'Jim', 'password: 'jd'}\", 'cost': 2.3700530529022217, 'msg': 'okay'}
+```
+
