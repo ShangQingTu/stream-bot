@@ -22,7 +22,7 @@ def query(payload):
         payload = {"query": prompt_str, "limit": 30}
         response = requests.post(API_URL, json=payload)
         raw_str = response.json()['data']
-        final_response = raw_str.split("<|startofpiece|>")[-1]
+        final_response = raw_str.split("<|startofpiece|>")[-1].split("|")[0]
         return final_response
     else:
         response = requests.post(API_URL, json=payload)
