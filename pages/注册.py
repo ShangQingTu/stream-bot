@@ -20,8 +20,9 @@ authenticator = Authenticate(
 try:
     if authenticator.register_user('Register user', preauthorization=False):
         st.success('User registered successfully')
+        print("user is registered")
+        with open('../config.yaml', 'w') as file:
+            print("Dump config into yaml")
+            yaml.dump(config, file, default_flow_style=False)
 except Exception as e:
     st.error(e)
-
-with open('../config.yaml', 'w') as file:
-    yaml.dump(config, file, default_flow_style=False)
