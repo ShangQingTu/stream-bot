@@ -30,6 +30,11 @@ def main_page():
     st.header(f"对话测试版本:{TEST_VERSION}")
     st.markdown("当前的场景是[学堂在线](https://www.xuetangx.com/)上的教育对话系统")
     st.markdown("您可以先阅读[测试文档]()")
+    course_name = st.selectbox(
+    '选择您的科目',
+    ('逻辑学概论', '大学物理1', '有机化学', '算法设计与分析', '经济学原理', '马克思主义基本原理', '思想道德修养与法律基础', '体育与社会', 'C++语言程序设计基础', '数据结构（上）', '电路原理', '软件工程', '中国近现代史纲要', '唐宋词鉴赏', '毛泽东思想与中国特色社会主义理论体系概论', '不朽的艺术：走进大师与经典', '新闻摄影', '生活英语读写', '日语与日本文化', '现代生活美学——插画之道')
+    )
+    st.write("您所在的科目是", course_name)
 
     if 'generated' not in st.session_state:\
         st.session_state['generated'] = []
