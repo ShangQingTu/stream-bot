@@ -21,7 +21,8 @@ try:
     if authenticator.register_user('Register user', preauthorization=False):
         st.success('User registered successfully')
         print("user is registered")
-        with open('../config.yaml', 'w') as file:
+        with open('/home/tsq/stream-bot/config.yaml', 'w') as file:
+            print(config)
             print("Dump config into yaml")
             yaml.dump(config, file, default_flow_style=False)
 except Exception as e:
