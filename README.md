@@ -19,6 +19,12 @@ pip install streamlit
 
 # Start server
 
+First activate:
+
+```
+conda activate blink37
+```
+
 On our 32 server, you can enter`/home/tsq/stream-bot`
 
 run:
