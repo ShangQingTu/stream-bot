@@ -22,3 +22,6 @@ try:
         st.success('User registered successfully')
 except Exception as e:
     st.error(e)
+
+with open('../config.yaml', 'w') as file:
+    yaml.dump(config, file, default_flow_style=False)
