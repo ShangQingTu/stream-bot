@@ -36,7 +36,7 @@ nohup mongod --dbpath ./ &
 run this to start the web page :
 
 ```
-streamlit run app.py
+nohup streamlit run app.py > streamlit_server_922.log &
 ```
 
 
