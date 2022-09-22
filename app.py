@@ -5,7 +5,7 @@ import requests
 import yaml
 from yaml.loader import SafeLoader
 from streamlit_authenticator.authenticate import Authenticate
-from models import build_prompt_for_glm
+from models import build_prompt_for_glm, filter_glm
 
 st.set_page_config(
     page_title="教育领域对话",
@@ -22,7 +22,7 @@ def query(payload):
         payload = {"query": prompt_str, "limit": 30}
         response = requests.post(API_URL, json=payload)
         raw_str = response.json()['data']
-        final_response = raw_str.split("<|startofpiece|>")[-1].split("|")[0]
+        final_response = filter_glm(raw_str)
         return final_response
     else:
         response = requests.post(API_URL, json=payload)
