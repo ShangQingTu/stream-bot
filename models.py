@@ -1,7 +1,7 @@
 import re
 
 
-def build_prompt_for_glm(data_dict):
+def build_prompt_for_glm(data_dict, mask_token='[gMASK]'):
     past_user_inputs = data_dict["past_user_inputs"]
     generated_responses = data_dict["generated_responses"]
     query = data_dict["text"]
@@ -13,7 +13,7 @@ def build_prompt_for_glm(data_dict):
     prompt_str = "|USER:你好|BOT:你好, 我是你的智能学习助理小木~|USER:最近怎么样|BOT:还是老样子"
     for i in range(his_turns):
         prompt_str += f"|USER:{past_user_inputs[i]}|BOT:{generated_responses[i]}"
-    prompt_str += f"|USER:{query}|BOT:[gMASK]"
+    prompt_str += f"|USER:{query}|BOT:{mask_token}"
     return prompt_str
 
 

@@ -11,8 +11,8 @@ st.set_page_config(
     page_title="教育领域对话",
     page_icon=":robot:"
 )
-API_URL = "http://localhost:9628/glm"
-TEST_VERSION = "glm_base"
+API_URL = "http://localhost:5452/cpm"
+TEST_VERSION = "cpm2"
 mdb = MongoDB(collection_name=TEST_VERSION)
 
 
@@ -23,6 +23,12 @@ def query(payload):
         response = requests.post(API_URL, json=payload)
         raw_str = response.json()['data']
         final_response = filter_glm(raw_str)
+        return final_response
+    elif TEST_VERSION == "cpm2":
+        prompt_str = build_prompt_for_glm(payload, mask_token='')
+        payload = {"query": prompt_str, "limit": 30}
+        response = requests.post(API_URL, json=payload)
+        final_response = response.json()
         return final_response
     else:
         response = requests.post(API_URL, json=payload)
