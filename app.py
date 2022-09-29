@@ -43,7 +43,7 @@ def get_text():
 def main_page():
     st.header(f"对话测试版本:{TEST_VERSION}")
     st.markdown("当前的场景是[学堂在线](https://www.xuetangx.com/)上的教育对话系统")
-    st.markdown("您可以先阅读[测试文档]()")
+    st.markdown("您可以先阅读[测试文档](https://kvbpkpddff.feishu.cn/docx/FY2GdXFHtoSQ1dxhrjGc2BsBn6b)")
     course_name = st.selectbox(
         '选择您的科目',
         ('逻辑学概论', '大学物理1', '有机化学', '算法设计与分析', '经济学原理', '马克思主义基本原理', '思想道德修养与法律基础', '体育与社会', 'C++语言程序设计基础', '数据结构（上）',
