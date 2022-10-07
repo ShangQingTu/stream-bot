@@ -18,6 +18,7 @@ def build_prompt_for_glm(data_dict, mask_token='[gMASK]'):
 
 
 def filter_glm(text, prefix="(BOT:|USER:)", split="|"):
+    text = re.sub("\[.*\]", "", text)
     if split == "|":
         regex_pattern = f"\<\|startofpiece\|\>([^\|]*)\{split}"
         reg = re.compile(regex_pattern)
