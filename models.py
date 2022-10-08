@@ -18,16 +18,17 @@ def build_prompt_for_glm(data_dict, mask_token='[gMASK]'):
 
 
 def filter_glm(text, prefix="(BOT:|USER:)", split="|"):
-    text = re.sub("\[.*\]", "", text)
     if split == "|":
         regex_pattern = f"\<\|startofpiece\|\>([^\|]*)\{split}"
         reg = re.compile(regex_pattern)
     t = re.findall(reg, text)
     if not t:
         t = re.findall(f"<\|startofpiece\|>(.+)", text)
-
+    if not t:
+        t = re.findall(f"\[\[gMASK\]\](.+)", text)
     res = "" if not t else t[0]
     res = res.strip()
+    res = re.sub("\[.*\]", "", res)
     prefix = prefix
     reg = re.compile(prefix)
     t = re.split(reg, res)

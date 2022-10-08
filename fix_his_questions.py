@@ -42,9 +42,12 @@ def query(test_version, payload):
         payload = {
             "contexts": final_contexts
         }
+        print(f"send payload is {payload}")
         response = requests.post(API_URL, json=payload)
         raw_str_lst = response.json()['outputs']
-        _lst = [filter_glm(raw_str.split('[[gMASK]]')[-1]) for raw_str in raw_str_lst]
+        print(f"raw_str_lst is {raw_str_lst}")
+        _lst = [filter_glm(raw_str) for raw_str in raw_str_lst]
+        _lst = [''.join(res.split()) for res in _lst]
         return _lst
     else:
         response = requests.post(API_URL, json=payload)
@@ -151,6 +154,7 @@ def generate_batch_answer(args):
     batches = gen_batch(v1_df, args.batch_size, args.course_question_num)
     res_path = os.path.join(args.data_dir, f'{args.test_version}.json')
     fout = check_fout(res_path)
+    print(f"total batch num is {len(batches)}")
     for batch in tqdm(batches):
         payload = {
             "contexts": batch,
