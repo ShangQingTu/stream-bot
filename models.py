@@ -25,7 +25,9 @@ def filter_glm(text, prefix="(BOT:|USER:)", split="|"):
     if not t:
         t = re.findall(f"<\|startofpiece\|>(.+)", text)
     if not t:
-        t = re.findall(f"\[\[gMASK\]\](.+)", text)
+        regex_pattern = f"\[\[gMASK\]\]([^\|]*)\{split}"
+        reg = re.compile(regex_pattern)
+        t = re.findall(reg, text)
     res = "" if not t else t[0]
     res = res.strip()
     res = re.sub("\[.*\]", "", res)

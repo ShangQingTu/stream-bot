@@ -38,6 +38,8 @@ def query(test_version, payload):
                 "text": payload["contexts"][i]["question"],
             }
             prompt_str = build_prompt_for_glm(_payload, mask_token='')
+            if len(prompt_str) > 512:
+                prompt_str = prompt_str[-512:]
             final_contexts.append(prompt_str)
         payload = {
             "contexts": final_contexts
@@ -48,7 +50,7 @@ def query(test_version, payload):
         print(f"raw_str_lst is {raw_str_lst}")
         _lst = [filter_glm(raw_str) for raw_str in raw_str_lst]
         _lst = [''.join(res.split()) for res in _lst]
-        return _lst
+        return _lst, raw_str_lst
     else:
         response = requests.post(API_URL, json=payload)
         return response.json()
@@ -161,13 +163,14 @@ def generate_batch_answer(args):
             "past": past,
             "generated": generated,
         }
-        answers = query(args.test_version, payload)
+        answers, raw_str_lst = query(args.test_version, payload)
         # log to res_path
         for j in range(args.batch_size):
             res = batch[j]
             res["answer"] = answers[j]
             res["usr_history"] = past[j]
             res["bot_history"] = generated[j]
+            res["raw_str"] = raw_str_lst[j]
             fout.write(json.dumps(res))
             fout.write("\n")
             past[j].append(batch[j]["question"])
