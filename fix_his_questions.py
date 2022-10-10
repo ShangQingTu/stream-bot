@@ -178,8 +178,10 @@ def generate_batch_answer(args):
         # control history length
         if len(past[0]) > args.past_num:
             for i in range(args.batch_size):
-                past[i] = past[i][1:]
-                generated[i] = generated[i][1:]
+                # past[i] = past[i][1:]
+                # generated[i] = generated[i][1:]
+                past[i] = []
+                generated[i] = []
 
 
 def check_fout(file_path):
