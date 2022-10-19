@@ -4,12 +4,12 @@ USER = "Q"
 BOT = "A"
 
 
-def build_prompt_for_glm(data_dict, mask_token='[gMASK]', background=''):
+def build_prompt_for_glm(data_dict, mask_token='[gMASK]', background='', past_num=8):
     past_user_inputs = data_dict["past_user_inputs"]
     generated_responses = data_dict["generated_responses"]
     query = data_dict["text"]
     # shorten history
-    his_turns = min(len(past_user_inputs), len(generated_responses), 8)
+    his_turns = min(len(past_user_inputs), len(generated_responses), past_num)
     past_user_inputs = past_user_inputs[-his_turns:]
     generated_responses = generated_responses[-his_turns:]
     # init

@@ -1,18 +1,23 @@
 import streamlit as st
 from database import MongoDB
 from streamlit_chat import message
+import os
 import requests
+import pandas as pd
 import yaml
 from yaml.loader import SafeLoader
 from streamlit_authenticator.authenticate import Authenticate
 from models import build_prompt_for_glm, filter_glm
+from fix_his_questions import version2api
 
 st.set_page_config(
     page_title="教育领域对话",
     page_icon=":robot:"
 )
-API_URL = "http://localhost:5452/cpm"
-TEST_VERSION = "cpm2"
+init_history_num = 4
+turn_utt_num = 6
+TEST_VERSION = "glm130b_base"
+API_URL = version2api[TEST_VERSION]
 mdb = MongoDB(collection_name=TEST_VERSION)
 
 
@@ -30,14 +35,49 @@ def query(payload):
         response = requests.post(API_URL, json=payload)
         final_response = response.json()
         return final_response
+    elif TEST_VERSION == "glm130b_base":
+        prompt_str = build_prompt_for_glm(payload, mask_token='', past_num=4)
+        if len(prompt_str) > 512:
+            prompt_str = prompt_str[-512:]
+        payload = {
+            "contexts": [prompt_str]
+        }
+        print(f"send payload is {payload}")
+        response = requests.post(API_URL, json=payload)
+        raw_str_lst = response.json()['outputs']
+        print(f"raw_str_lst is {raw_str_lst}")
+        _lst = [filter_glm(raw_str) for raw_str in raw_str_lst]
+        _lst = [''.join(res.split()) for res in _lst]
+        return _lst[0]
     else:
         response = requests.post(API_URL, json=payload)
         return response.json()
 
 
 def get_text():
-    input_text = st.text_input("学生用户: ", "你好", key="input")
+    input_text = st.text_input("学生用户: ", key="input")
     return input_text
+
+
+def get_fix_history(course_name, last_utts=[]):
+    v1_csv_path = os.path.join('/data/tsq/xiaomu', f'glm130b_base_v3_history_question.csv')
+    v1_df = pd.read_csv(v1_csv_path, header=None)
+    st.session_state['generated'] = []
+    st.session_state['past'] = []
+    for index, row in v1_df.iterrows():
+        if index == 0:
+            continue
+        course = row[3]
+        question = row[4]
+        answer = row[5]
+        if course != course_name:
+            continue
+        if question in last_utts:
+            continue
+        st.session_state['past'].append(question)
+        st.session_state['generated'].append(answer)
+        if len(st.session_state['past']) >= init_history_num:
+            break
 
 
 def main_page():
@@ -52,11 +92,10 @@ def main_page():
     )
     st.write("您所在的科目是", course_name)
 
-    if 'generated' not in st.session_state:
-        st.session_state['generated'] = []
-
-    if 'past' not in st.session_state:
-        st.session_state['past'] = []
+    if 'generated' not in st.session_state or 'past' not in st.session_state:
+        get_fix_history(course_name)
+    elif len(st.session_state['past']) > init_history_num + turn_utt_num:
+        get_fix_history(course_name, last_utts=st.session_state['past'][:init_history_num])
 
     user_input = get_text()
 
