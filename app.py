@@ -59,11 +59,12 @@ def get_text():
     return input_text
 
 
-def get_fix_history(course_name, last_utts=[]):
+def get_fix_history(course_name):
     v1_csv_path = os.path.join('/data/tsq/xiaomu', f'glm130b_base_v3_history_question.csv')
     v1_df = pd.read_csv(v1_csv_path, header=None)
     st.session_state['generated'] = []
     st.session_state['past'] = []
+    pos = 0
     for index, row in v1_df.iterrows():
         if index == 0:
             continue
@@ -72,11 +73,16 @@ def get_fix_history(course_name, last_utts=[]):
         answer = row[5]
         if course != course_name:
             continue
-        if question in last_utts:
+        if pos < st.session_state['fix_history_pos']:
+            pos += 1
             continue
         st.session_state['past'].append(question)
+        if type(answer) != str:
+            answer = ""
+        # print("answer: ", answer)
         st.session_state['generated'].append(answer)
         if len(st.session_state['past']) >= init_history_num:
+            st.session_state['fix_history_pos'] += init_history_num
             break
 
 
@@ -91,13 +97,24 @@ def main_page():
          '现代生活美学——插画之道')
     )
     st.write("您所在的科目是", course_name)
-
+    if 'course_name' not in st.session_state:
+        # new user!
+        st.session_state['course_name'] = course_name
+        st.session_state['fix_history_pos'] = 0
+    elif st.session_state['course_name'] != course_name:
+        # new course!
+        st.session_state['course_name'] = course_name
+        st.session_state['fix_history_pos'] = 0
+        get_fix_history(course_name)
+    # new user!
     if 'generated' not in st.session_state or 'past' not in st.session_state:
         get_fix_history(course_name)
-    elif len(st.session_state['past']) > init_history_num + turn_utt_num:
-        get_fix_history(course_name, last_utts=st.session_state['past'][:init_history_num])
-
     user_input = get_text()
+    # print(st.session_state['fix_history_pos'])
+    st.write(
+        f"您在此课程已经聊了{st.session_state['fix_history_pos'] // init_history_num - 1}轮, 每轮{turn_utt_num}句对话,在每轮结束时,会有新的{init_history_num}句对话背景")
+    st.write("每轮的最后一句对话不会打出,但会存在数据库里,每轮的第一句对话后轮数会更新～")
+    st.write("当您看到没有新的对话背景的时候,这门课就聊完了～")
 
     if user_input:
         output = query({
@@ -120,10 +137,13 @@ def main_page():
         st.session_state.generated.append(output)
 
     if st.session_state['generated']:
-
+        if len(st.session_state['past']) >= init_history_num + turn_utt_num:
+            # new turn !
+            get_fix_history(course_name)
+        # print messages
         for i in range(len(st.session_state['generated']) - 1, -1, -1):
-            message(st.session_state["generated"][i], key=str(i))
             message(st.session_state['past'][i], is_user=True, key=str(i) + '_user')
+            message(st.session_state["generated"][i], key=str(i))
 
 
 # Loading config file
