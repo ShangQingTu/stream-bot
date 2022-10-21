@@ -49,8 +49,9 @@ def query(payload):
         _lst = [''.join(res.split()) for res in _lst]
         return _lst[0]
     elif TEST_VERSION == "cdail_gpt":
-        _send = {"question": payload["text"]}
-        response = requests.post(API_URL, json=_send)
+        glm_api = "http://0.0.0.0:9600/cdial"
+        _payload = {"question": payload["text"]}
+        response = requests.post(glm_api, json=_payload)
         raw_str = response.json()['answer']
         return "".join(raw_str.split())
     else:
