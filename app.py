@@ -52,6 +52,14 @@ def query(payload):
         glm_api = "http://0.0.0.0:9600/cdial"
         _payload = {"question": payload["text"]}
         response = requests.post(glm_api, json=_payload)
+        # print(response.json()["answer"])
+        # print("payload", payload)
+        # _send = {"question": payload["text"]}
+        # print("_send", _send)
+        # print("API_URL", API_URL)
+        # response = requests.post(API_URL, json=_send)
+        print("response", response)
+        print("response.json()", response.json())
         raw_str = response.json()['answer']
         return "".join(raw_str.split())
     else:
