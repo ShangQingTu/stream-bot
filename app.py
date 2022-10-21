@@ -1,5 +1,5 @@
 import streamlit as st
-from database import MongoDB
+from database import MongoDB, TEST_VERSION
 from streamlit_chat import message
 import os
 import requests
@@ -16,7 +16,6 @@ st.set_page_config(
 )
 init_history_num = 4
 turn_utt_num = 6
-TEST_VERSION = "glm130b_base"
 API_URL = version2api[TEST_VERSION]
 mdb = MongoDB(collection_name=TEST_VERSION)
 
@@ -49,6 +48,11 @@ def query(payload):
         _lst = [filter_glm(raw_str) for raw_str in raw_str_lst]
         _lst = [''.join(res.split()) for res in _lst]
         return _lst[0]
+    elif TEST_VERSION == "cdail_gpt":
+        _send = {"question": payload["text"]}
+        response = requests.post(API_URL, json=_send)
+        raw_str = response.json()['answer']
+        return "".join(raw_str.split())
     else:
         response = requests.post(API_URL, json=payload)
         return response.json()

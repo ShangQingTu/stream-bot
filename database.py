@@ -2,6 +2,9 @@
 # coding=utf-8
 from pymongo import MongoClient
 from bson.objectid import ObjectId
+import pandas as pd
+
+TEST_VERSION = "cdail_gpt"
 
 
 class MongoDB(object):
@@ -54,8 +57,16 @@ class MongoDB(object):
         print(result)
 
 
+def dump(version):
+    mdb = MongoDB(collection_name=version)
+    res = mdb.get_many()
+    res_lst = list(res)
+    df = pd.DataFrame(res_lst)
+    df.to_csv(f'/data/tsq/xiaomu/{version}_test_{len(res_lst)}.csv')
+
+
 if __name__ == '__main__':
-    mdb = MongoDB()
+    # mdb = MongoDB()
     # 添加
     # mdb.add_one({"title": "java", "content": "教育"})
     # dt = [
@@ -99,5 +110,6 @@ if __name__ == '__main__':
     # mdb.del_one(q)
 
     # 删除多条
-    q = {"title": {"$regex": "c++"}}
-    mdb.del_many(q)
+    # q = {"title": {"$regex": "c++"}}
+    # mdb.del_many(q)
+    dump(TEST_VERSION)
