@@ -11,7 +11,17 @@ version2api = {
     "glm_base": "http://localhost:9628/glm",
     "glm130b_base": "http://103.238.162.37:9622/general",
     "cdail_gpt": "http://0.0.0.0:9600/cdail",
+    "eva": "http://0.0.0.0:9601/eva",
 }
+
+
+def merge_chat_history(past_user_inputs, generated_responses):
+    history_len = min(len(past_user_inputs), len(generated_responses), 4)
+    chat_history = []
+    for i in range(history_len):
+        chat_history.append(past_user_inputs[i])
+        chat_history.append(generated_responses[i])
+    return chat_history
 
 
 def query(test_version, payload):

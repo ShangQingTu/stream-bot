@@ -8,7 +8,7 @@ import yaml
 from yaml.loader import SafeLoader
 from streamlit_authenticator.authenticate import Authenticate
 from models import build_prompt_for_glm, filter_glm
-from fix_his_questions import version2api
+from fix_his_questions import version2api, merge_chat_history
 
 st.set_page_config(
     page_title="教育领域对话",
@@ -50,7 +50,11 @@ def query(payload):
         return _lst[0]
     elif TEST_VERSION == "cdail_gpt":
         glm_api = "http://0.0.0.0:9600/cdial"
-        _payload = {"question": payload["text"]}
+        _payload = {
+            "question": payload["text"],
+            "chat_history": merge_chat_history(payload["past_user_inputs"], payload["generated_responses"])
+        }
+        print(f"send payload is {_payload}")
         response = requests.post(glm_api, json=_payload)
         # print(response.json()["answer"])
         # print("payload", payload)
@@ -58,6 +62,18 @@ def query(payload):
         # print("_send", _send)
         # print("API_URL", API_URL)
         # response = requests.post(API_URL, json=_send)
+        print("response", response)
+        print("response.json()", response.json())
+        raw_str = response.json()['answer']
+        return "".join(raw_str.split())
+    elif TEST_VERSION == "eva":
+        glm_api = "http://0.0.0.0:9601/eva"
+        _payload = {
+            "question": payload["text"],
+            "chat_history": merge_chat_history(payload["past_user_inputs"], payload["generated_responses"])
+        }
+        print(f"send payload is {_payload}")
+        response = requests.post(glm_api, json=_payload)
         print("response", response)
         print("response.json()", response.json())
         raw_str = response.json()['answer']
