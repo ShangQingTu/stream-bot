@@ -63,8 +63,16 @@ def query(test_version, payload):
         _lst = [''.join(res.split()) for res in _lst]
         return _lst, raw_str_lst
     else:
-        response = requests.post(API_URL, json=payload)
-        return response.json()
+        _payload = {
+            "question": payload["text"],
+            "chat_history": merge_chat_history(payload["past_user_inputs"], payload["generated_responses"])
+        }
+        print(f"send payload is {_payload}")
+        response = requests.post(API_URL, json=_payload)
+        print("response", response)
+        print("response.json()", response.json())
+        raw_str = response.json()['answer']
+        return "".join(raw_str.split())
 
 
 def generate_his_answer(args):
