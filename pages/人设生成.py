@@ -7,6 +7,7 @@ from yaml.loader import SafeLoader
 from streamlit_authenticator.authenticate import Authenticate
 from models import build_prompt_for_glm, filter_glm
 from fix_his_questions import version2api
+import time
 
 st.set_page_config(
     page_title="教育领域对话",
@@ -54,10 +55,11 @@ def query(payload):
 
 
 def query_candidates(payload, sample_times=5):
+    print("query_candidates is called")
     res = []
     if st.session_state['type'] == 'introduction':
         persona_name = st.session_state['persona_name']
-        res = [f'你好,我是{persona_name}小木', '初始化介绍请标注者帮小木写', '其他']
+        res = [f'你好,我是{persona_name}小木', '初始化介绍请标注者帮小木写', '其他', f'{time.time()}']
     else:
         for i in range(sample_times):
             res.append(query(payload))
@@ -66,12 +68,14 @@ def query_candidates(payload, sample_times=5):
 
 def get_text_with_tag():
     q_type, tag = st.session_state['type_tag_lst'][st.session_state['type_tag_pos']]
+    st.session_state['type'] = q_type
+    st.session_state['tag'] = tag
     if q_type == 'introduction':
-        user_q_prompt = f'现在是学生与小木最初见面后的第*{tag}*句对白'
+        user_q_prompt = f'现在是学生与小木最初见面后的第**{tag}**句对白'
     elif q_type == 'emotion':
-        user_q_prompt = f'学生想说一句带有*{tag}*情感的话'
+        user_q_prompt = f'学生想说一句带有**{tag}**情感的话'
     else:
-        user_q_prompt = f'学生想问一个*{tag}*的逻辑问题'
+        user_q_prompt = f'学生想问一个**{tag}**的逻辑问题'
     st.markdown(user_q_prompt)
     # 未来可以换成用模型生成
     input_text = st.text_input("学生用户: ", key="input")
@@ -110,18 +114,21 @@ def main_page():
     # 规定用户的请求类型
     user_input = get_text_with_tag()
     # print(st.session_state['fix_history_pos'])
-
     if user_input:
+        # choice_st = st.empty()
         candidates = query_candidates({
             "past_user_inputs": st.session_state.past,
             "generated_responses": st.session_state.generated,
             "text": user_input,
         })
-        _output = st.selectbox('请选择符合小木的人设的回答', candidates)
-        st.markdown(_output)
-        output = st.text_input("小木最终回答(您可以修改生成结果后填入): ", key="input")
+        st.markdown('请选择符合小木的人设的回答:')
+        for _output in candidates:
+            # chosen_st = st.empty()
+            st.markdown("- " + _output)
+        after_query_st = st.empty()
+        output = after_query_st.text_input("小木最终回答(您可以修改生成结果后填入): ", key="output")
         # add into db
-        if output:
+        if st.button('提交'):
             _id = len(list(mdb.get_many()))
             record = {
                 "id": _id,  # 自增
@@ -134,12 +141,15 @@ def main_page():
                 "candidates": f"{candidates}",  # glm在sample中产生的候选
             }
             # log
+            st.session_state['type_tag_pos'] += 1
             mdb.add_one(record)
             st.session_state.past.append(user_input)
             st.session_state.generated.append(output)
+            # choice_st.empty()
+            # chosen_st.empty()
+            after_query_st.empty()
 
     if st.session_state['generated']:
-        st.session_state['type_tag_pos'] += 1
         # print messages
         for i in range(len(st.session_state['generated']) - 1, -1, -1):
             message(st.session_state['past'][i], is_user=True, key=str(i) + '_user')
