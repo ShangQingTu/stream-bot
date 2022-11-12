@@ -4,7 +4,7 @@ USER = "Q"
 BOT = "A"
 
 
-def build_prompt_for_glm(data_dict, mask_token='[gMASK]', background='', past_num=8):
+def build_prompt_for_glm(data_dict, mask_token='[gMASK]', background='', past_num=8, init=True):
     past_user_inputs = data_dict["past_user_inputs"]
     generated_responses = data_dict["generated_responses"]
     query = data_dict["text"]
@@ -13,7 +13,10 @@ def build_prompt_for_glm(data_dict, mask_token='[gMASK]', background='', past_nu
     past_user_inputs = past_user_inputs[-his_turns:]
     generated_responses = generated_responses[-his_turns:]
     # init
-    prompt_str = f"{background}|{USER}:你好|{BOT}:你好, 我是你的智能学习助理小木~|{USER}:最近怎么样|{BOT}:还是老样子|{USER}:你有什么功能|{BOT}:我可以为你解释知识点概念、查询课程资源、回答平台使用常见问题,推荐学术资源,还可以为你作诗哦～"
+    if init:
+        prompt_str = f"{background}|{USER}:你好|{BOT}:你好, 我是你的智能学习助理小木~|{USER}:最近怎么样|{BOT}:还是老样子|{USER}:你有什么功能|{BOT}:我可以为你解释知识点概念、查询课程资源、回答平台使用常见问题,推荐学术资源,还可以为你作诗哦～"
+    else:
+        prompt_str = f"{background}"
     for i in range(his_turns):
         if len(generated_responses[i]) < 1:
             continue
