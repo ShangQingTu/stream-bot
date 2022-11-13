@@ -14,6 +14,15 @@ version2api = {
     "eva": "http://0.0.0.0:9601/eva",
 }
 
+type2tags = {
+    "introduction": [0, 1, 2, 3],
+    # "emotion": ['惊喜', '激动', '愤怒', '骄傲', '伤心', '工作上的烦恼', '感激'],
+    "emotion": ['surprised', 'excited', 'angry', 'proud', 'sad', 'annoyed', 'grateful'],
+    "logic": ['compare', 'why', 'how', 'enumerate', 'recommend'],
+}
+
+personas = ['学姐', '学长', '学弟', '学妹', '老师']
+
 
 def merge_chat_history(past_user_inputs, generated_responses):
     history_len = min(len(past_user_inputs), len(generated_responses), 4)

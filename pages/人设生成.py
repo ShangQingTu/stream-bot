@@ -6,7 +6,7 @@ import yaml
 from yaml.loader import SafeLoader
 from streamlit_authenticator.authenticate import Authenticate
 from models import build_prompt_for_glm, filter_glm
-from fix_his_questions import version2api
+from fix_his_questions import version2api, type2tags, personas
 import time
 
 st.set_page_config(
@@ -28,12 +28,6 @@ turn_utt_num = 6
 API_VERSION = 'glm_base'
 API_URL = version2api[API_VERSION]
 mdb = MongoDB(collection_name=f'persona_{API_VERSION}')
-type2tags = {
-    "introduction": [0, 1, 2, 3],
-    # "emotion": ['惊喜', '激动', '愤怒', '骄傲', '伤心', '工作上的烦恼', '感激'],
-    "emotion": ['surprised', 'excited', 'angry', 'proud', 'sad', 'annoyed', 'grateful'],
-    "logic": ['compare', 'why', 'how', 'enumerate', 'recommend'],
-}
 
 
 def query(payload):
@@ -109,7 +103,7 @@ def main_page():
     st.header(f"对话测试版本:{API_VERSION}")
     st.markdown("当前的场景是[学堂在线](https://www.xuetangx.com/)上的教育对话系统小木,它现在具有特定的**人设**")
     st.markdown("您可以先阅读[测试文档](https://kvbpkpddff.feishu.cn/docx/FY2GdXFHtoSQ1dxhrjGc2BsBn6b)")
-    persona_name = st.selectbox('选择小木的人设', ('学姐', '学长', '学弟', '学妹', '老师'))
+    persona_name = st.selectbox('选择小木的人设', personas)
     st.write("小木当前的人设是", persona_name)
     if 'persona_name' not in st.session_state:
         # new user!
