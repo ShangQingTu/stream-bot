@@ -13,6 +13,16 @@ st.set_page_config(
     page_title="教育领域对话",
     page_icon=":robot:"
 )
+m = st.markdown("""
+<style>div.stButton > button:first-child {
+    background-color: #0099ff;
+    color:#ffffff;
+}
+div.stButton > button:hover {
+    background-color: #00ff00;
+    color:#ff0000;
+    }
+</style>""", unsafe_allow_html=True)
 init_history_num = 4
 turn_utt_num = 6
 API_VERSION = 'glm_base'
@@ -59,7 +69,7 @@ def query_candidates(payload, sample_times=5):
     res = []
     if st.session_state['type'] == 'introduction':
         persona_name = st.session_state['persona_name']
-        res = [f'你好,我是{persona_name}小木', '初始化介绍请标注者帮小木写', '其他', f'{time.time()}']
+        res = [f'你好,我是{persona_name}小木', '初始化介绍请标注者帮小木写', '其他', f"{time.strftime('%Y-%m-%d %H:%M:%S')}"]
     else:
         for i in range(sample_times):
             res.append(query(payload))
@@ -71,12 +81,14 @@ def get_text_with_tag():
     st.session_state['type'] = q_type
     st.session_state['tag'] = tag
     if q_type == 'introduction':
-        user_q_prompt = f'现在是学生与小木最初见面后的第**{tag}**句对白'
+        user_q_prompt = f'现在是学生与小木最初见面后的第**{tag + 1}**句对白'
     elif q_type == 'emotion':
         user_q_prompt = f'学生想说一句带有**{tag}**情感的话'
     else:
         user_q_prompt = f'学生想问一个**{tag}**的逻辑问题'
-    st.markdown(user_q_prompt)
+    label_prompt = "请在每次点击完`小木说好了`后**删除**学生输入框中的内容,并按下**回车**,就可以更新学生的对话意图"
+    st.markdown(f"#### 学生对话意图: {user_q_prompt}")
+    st.markdown(label_prompt)
     # 未来可以换成用模型生成
     input_text = st.text_input("学生用户: ", key="input")
     return input_text
@@ -114,7 +126,7 @@ def main_page():
     # 规定用户的请求类型
     user_input = get_text_with_tag()
     # print(st.session_state['fix_history_pos'])
-    if user_input:
+    if st.button('学生说好了', key="stu"):
         # choice_st = st.empty()
         candidates = query_candidates({
             "past_user_inputs": st.session_state.past,
@@ -125,29 +137,28 @@ def main_page():
         for _output in candidates:
             # chosen_st = st.empty()
             st.markdown("- " + _output)
-        after_query_st = st.empty()
-        output = after_query_st.text_input("小木最终回答(您可以修改生成结果后填入): ", key="output")
-        # add into db
-        if st.button('提交'):
-            _id = len(list(mdb.get_many()))
-            record = {
-                "id": _id,  # 自增
-                "persona": f"{persona_name}",  # persona
-                "user_name": f"{st.session_state['name']}",  # 用户名
-                "type": f"{st.session_state['type']}",  # 问题的类型
-                "tag": f"{st.session_state['tag']}",  # 标签(比如，情绪的细分类,逻辑类型等)
-                "query": f"{user_input}",  # 用户的输入
-                "answer": f"{output}",  # 系统的回复
-                "candidates": f"{candidates}",  # glm在sample中产生的候选
-            }
-            # log
-            st.session_state['type_tag_pos'] += 1
-            mdb.add_one(record)
-            st.session_state.past.append(user_input)
-            st.session_state.generated.append(output)
-            # choice_st.empty()
-            # chosen_st.empty()
-            after_query_st.empty()
+        st.session_state['candidates'] = candidates
+    # after_query_st = st.empty()
+    output = st.text_input("小木最终回答(您可以修改生成结果后填入): ", key="output")
+    # add into db
+    if st.button('小木说好了', key="final"):
+        _time = time.strftime('%Y-%m-%d %H:%M:%S')
+        _id = f"{len(list(mdb.get_many()))}_{_time}"
+        record = {
+            "id": _id,  # 自增
+            "persona": f"{persona_name}",  # persona
+            "user_name": f"{st.session_state['name']}",  # 用户名
+            "type": f"{st.session_state['type']}",  # 问题的类型
+            "tag": f"{st.session_state['tag']}",  # 标签(比如，情绪的细分类,逻辑类型等)
+            "query": f"{user_input}",  # 用户的输入
+            "answer": f"{output}",  # 系统的回复
+            "candidates": f"{st.session_state['candidates']}",  # glm在sample中产生的候选
+        }
+        # log
+        st.session_state['type_tag_pos'] += 1
+        mdb.add_one(record)
+        st.session_state.past.append(user_input)
+        st.session_state.generated.append(output)
 
     if st.session_state['generated']:
         # print messages
