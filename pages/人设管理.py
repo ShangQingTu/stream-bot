@@ -92,12 +92,14 @@ def main_page():
         print(len(to_delete_lst))
         st.success(f"已经删除了, {to_delete_lst}")
     # 使用多选　和　select button实现建立新版本的QA集合
-    loc_lst = [i for i in range(df_len)]
-    select_options = st.multiselect(
-        '选择数据行号,建立新版本的人设',
-        loc_lst,
-        loc_lst)
+    to_select_lst_str = st.text_input("选择创建新版本人格的数据行号(空格隔开)", key="to_select")
+    # loc_lst = [i for i in range(df_len)]
+    # select_options = st.multiselect(
+    #     '选择数据行号,建立新版本的人设',
+    #     loc_lst,
+    #     loc_lst)
     if st.button("确定选择"):
+        select_options = [int(a) for a in to_select_lst_str.strip().split()]
         print(f"选择 {select_options}")
         version_id = select_db(option_persona, select_options)
         st.success(f"已经创建了由　{select_options}行的数据构建的人格,版本号为{version_id}")

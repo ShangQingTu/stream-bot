@@ -7,6 +7,7 @@ from yaml.loader import SafeLoader
 from streamlit_authenticator.authenticate import Authenticate
 from models import build_prompt_for_glm, filter_glm
 from fix_his_questions import version2api, type2tags, personas
+import pandas as pd
 import time
 
 st.set_page_config(
@@ -28,10 +29,25 @@ turn_utt_num = 6
 API_VERSION = 'glm_base'
 API_URL = version2api[API_VERSION]
 mdb = MongoDB(collection_name=f'persona_{API_VERSION}')
+pid_mdb = MongoDB(collection_name=f'pid_list_{API_VERSION}')
+
+
+def add_version_persona(payload):
+    if 'version_qa_df' not in st.session_state:
+        return payload
+    # 添加版本人格的对话历史
+    version_qa_df = st.session_state['version_qa_df']
+    # add all introduction and emotions
+    query_lst = list(version_qa_df["query"])
+    answer_lst = list(version_qa_df["answer"])
+    payload["past_user_inputs"] = query_lst + payload["past_user_inputs"]
+    payload["generated_responses"] = answer_lst + payload["generated_responses"]
+    return payload
 
 
 def query(payload):
     background = 'Q是一个正在学堂在线慕课网站上学习的学生,他需要情感帮助,小木正在开导他'
+    payload = add_version_persona(payload)
     if API_VERSION == "glm_base":
         prompt_str = build_prompt_for_glm(payload, background=background, init=False)
         payload = {"query": prompt_str, "limit": 30}
@@ -71,7 +87,15 @@ def query_candidates(payload, sample_times=5):
 
 
 def get_text_with_tag():
+    pos_lst = [i for i in st.session_state['type_tag_lst']]
+    select_pos = st.selectbox("您想跳转到哪个对话类型?", pos_lst)
     q_type, tag = st.session_state['type_tag_lst'][st.session_state['type_tag_pos']]
+    if st.button("确定跳转"):
+        q_type, tag = select_pos
+        for i, _pos in enumerate(st.session_state['type_tag_lst']):
+            if _pos == select_pos:
+                st.session_state['type_tag_pos'] = i
+                break
     st.session_state['type'] = q_type
     st.session_state['tag'] = tag
     if q_type == 'introduction':
@@ -99,12 +123,51 @@ def get_introduction(persona_name):
     st.session_state['type_tag_pos'] = 0
 
 
+def get_version_qa_df(pid_lst):
+    # select df that has the _id in pid_lst
+    res = mdb.get_many()
+    res_lst = list(res)
+    final = []
+    for res in res_lst:
+        res['_id'] = str(res['_id'])
+        if res['_id'] in pid_lst:
+            final.append(res)
+    df = pd.DataFrame(final)
+    return df
+
+
+def set_persona():
+    persona_name = st.selectbox('选择小木的人设', personas)
+    # 　可以选择的vid
+    vid_lst = []
+    res_lst = list(pid_mdb.get_many())
+    # 　这里开销有些大,或许以后等数据多了可以做一个dict的cache
+    vid2pid_lst = {}
+    for res in res_lst:
+        vid = str(res['vid'])
+        pid_lst = res['pid_list']
+        version_persona = vid.split("_")[0]
+        if version_persona == persona_name:
+            vid_lst.append(vid)
+            vid2pid_lst[vid] = pid_lst
+    if vid_lst:
+        vid = st.selectbox('选择小木的人设版本', [""] + vid_lst)
+        if vid:
+            _persona, _user, _num = vid.split("_")
+            person_str = f"> 小木是由*{_user}*创建的{_persona}人格**{_num}**号机"
+            st.markdown(person_str)
+            # 　选完之后更新state
+            st.session_state['version_qa_df'] = get_version_qa_df(vid2pid_lst[vid])
+    
+    return persona_name
+
+
 def main_page():
     st.header(f"对话测试版本:{API_VERSION}")
     st.markdown("当前的场景是[学堂在线](https://www.xuetangx.com/)上的教育对话系统小木,它现在具有特定的**人设**")
     st.markdown("您可以先阅读[测试文档](https://kvbpkpddff.feishu.cn/docx/FY2GdXFHtoSQ1dxhrjGc2BsBn6b)")
-    persona_name = st.selectbox('选择小木的人设', personas)
-    st.write("小木当前的人设是", persona_name)
+    # 　设置人设　与　默认版本
+    persona_name = set_persona()
     if 'persona_name' not in st.session_state:
         # new user!
         st.session_state['persona_name'] = persona_name
