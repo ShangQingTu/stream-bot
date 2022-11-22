@@ -27,7 +27,8 @@ def get_version_qa_lst(mdb, pid_lst):
     qa_dict_lst = []
     for i, query in enumerate(query_lst):
         answer = answer_lst[i]
-        qa_dict_lst.append({'q': query, 'a': answer})
+        qa_dict_lst.append({'talker': "user", 'text': query, 'is_bot': False})
+        qa_dict_lst.append({'talker': "bot", 'text': answer, 'is_bot': True})
     return qa_dict_lst
 
 
@@ -37,17 +38,17 @@ def dump_persona_json(args):
     pid_mdb = MongoDB(collection_name=f'pid_list_{args.model_version}')
     res_lst = list(pid_mdb.get_many())
     # get vid2qa_dict_lst
-    vid2qa_lst = {}
+    persona2qa_lst = {}
     for res in res_lst:
         vid = str(res['vid'])
         if vid in version_ids:
             pid_list = res['pid_list']
             version_qa_lst = get_version_qa_lst(mdb, pid_list)
-            vid2qa_lst[vid] = version_qa_lst
+            persona2qa_lst[vid.split("_")[0]] = version_qa_lst
     # dump to json
     dump_path = os.path.join(args.data_dir, f"{args.user}_{args.model_version}.json")
     with open(dump_path, 'w') as fout:
-        json.dump(vid2qa_lst, fout)
+        json.dump(persona2qa_lst, fout)
 
 
 def main():

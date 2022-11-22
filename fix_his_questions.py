@@ -8,7 +8,7 @@ from tqdm import tqdm
 
 version2api = {
     "cpm2": "http://localhost:5452/cpm",
-    "glm_base": "http://localhost:9628/glm",
+    "glm_base": "http://localhost:9546/glm",
     "glm130b_base": "http://103.238.162.37:9622/general",
     "cdail_gpt": "http://0.0.0.0:9600/cdail",
     "eva": "http://0.0.0.0:9601/eva",
