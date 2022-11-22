@@ -15,13 +15,23 @@ version2api = {
 }
 
 type2tags = {
-    "introduction": [0, 1, 2, 3],
+    "introduction": [0, 1],
     # "emotion": ['惊喜', '激动', '愤怒', '骄傲', '伤心', '工作上的烦恼', '感激'],
-    "emotion": ['surprised', 'excited', 'angry', 'proud', 'sad', 'annoyed', 'grateful'],
+    # "emotion": ['surprised', 'excited', 'angry', 'proud', 'sad', 'annoyed', 'grateful'],
+    # Top 10 frequent emotion in dialog history
+    "emotion": ['surprised', 'angry', 'sad', 'annoyed', 'lonely',
+                'afraid', 'guilty', 'joyful', 'disappointed', 'sentimental'],
+    # At least once occur in history
+    # [
+    #     'surprised', 'excited', 'angry', 'sad', 'annoyed', 'grateful',
+    #     'lonely', 'afraid', 'guilty', 'impressed', 'disgusted', 'hopeful',
+    #     'furious', 'anxious', 'anticipating', 'joyful', 'disappointed', 'content',
+    #     'embarrassed', 'caring', 'sentimental', 'trusting', 'apprehensive'
+    # ],
     "logic": ['compare', 'why', 'how', 'enumerate', 'recommend'],
 }
 
-personas = ['学姐', '学长', '学弟', '学妹', '老师']
+personas = ['同学', '朋友', '助教', '老师', '学弟', '学妹', '学长', '学姐']
 
 
 def merge_chat_history(past_user_inputs, generated_responses):
