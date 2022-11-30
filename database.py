@@ -4,7 +4,7 @@ from pymongo import MongoClient
 from bson.objectid import ObjectId
 import pandas as pd
 
-TEST_VERSION = "eva"
+TEST_VERSION = "gpt3"
 
 
 class MongoDB(object):

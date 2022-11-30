@@ -7,7 +7,7 @@ from yaml.loader import SafeLoader
 from streamlit_authenticator.authenticate import Authenticate
 from fix_his_questions import version2api, type2tags, personas
 
-super_users = ['tsq22']
+super_users = ['tsq22', 'zsy']
 st.set_page_config(
     page_title="人设管理",
     page_icon=":shark:"

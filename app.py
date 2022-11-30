@@ -78,6 +78,16 @@ def query(payload):
         print("response.json()", response.json())
         raw_str = response.json()['answer']
         return "".join(raw_str.split())
+    elif TEST_VERSION == "gpt3":
+        glm_api = "http://0.0.0.0:9602/gpt"
+        _payload = {
+            "question": payload["text"],
+            "chat_history": merge_chat_history(payload["past_user_inputs"], payload["generated_responses"])
+        }
+        print(f"send payload is {_payload}")
+        response = requests.post(glm_api, json=_payload)
+        raw_str = response.json()['answer']
+        return "".join(raw_str.split())
     else:
         response = requests.post(API_URL, json=payload)
         return response.json()
