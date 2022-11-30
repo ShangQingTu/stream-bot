@@ -62,7 +62,7 @@ def dump(version):
     res = mdb.get_many()
     res_lst = list(res)
     df = pd.DataFrame(res_lst)
-    df.to_csv(f'/data/tsq/xiaomu/{version}_test_{len(res_lst)}.csv')
+    df.to_csv(f'/data/tsq/xiaomu/general_dialogue_test/{version}_test_{len(res_lst)}.csv')
 
 
 if __name__ == '__main__':

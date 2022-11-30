@@ -99,7 +99,7 @@ def get_text():
 
 
 def get_fix_history(course_name):
-    v1_csv_path = os.path.join('/data/tsq/xiaomu', f'glm130b_base_v3_history_question.csv')
+    v1_csv_path = os.path.join('/data/tsq/xiaomu/general_dialogue_test', f'glm130b_base_v3_history_question.csv')
     v1_df = pd.read_csv(v1_csv_path, header=None)
     st.session_state['generated'] = []
     st.session_state['past'] = []

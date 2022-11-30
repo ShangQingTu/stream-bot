@@ -12,6 +12,7 @@ version2api = {
     "glm130b_base": "http://103.238.162.37:9622/general",
     "cdail_gpt": "http://0.0.0.0:9600/cdail",
     "eva": "http://0.0.0.0:9601/eva",
+    "gpt3": "http://0.0.0.0:9602/gpt",
 }
 
 type2tags = {
