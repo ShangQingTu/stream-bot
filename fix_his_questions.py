@@ -39,8 +39,11 @@ def merge_chat_history(past_user_inputs, generated_responses):
     history_len = min(len(past_user_inputs), len(generated_responses), 4)
     chat_history = []
     for i in range(history_len):
-        chat_history.append(past_user_inputs[i])
-        chat_history.append(generated_responses[i])
+        if past_user_inputs[i] and generated_responses[i]:
+            chat_history.append(past_user_inputs[i])
+            chat_history.append(generated_responses[i])
+    if len(chat_history) < 1:
+        return ['Hi', '你好，我是你的学习助理小木']
     return chat_history
 
 
@@ -88,6 +91,7 @@ def query(test_version, payload):
             "chat_history": merge_chat_history(payload["past_user_inputs"], payload["generated_responses"])
         }
         print(f"send payload is {_payload}")
+        print(API_URL)
         response = requests.post(API_URL, json=_payload)
         print("response", response)
         print("response.json()", response.json())
@@ -117,11 +121,14 @@ def generate_his_answer(args):
         category = row[3]
         course = row[4]
         question = row[5]
-        answer = query(args.test_version, {
-            "past_user_inputs": past,
-            "generated_responses": generated,
-            "text": question,
-        })
+        try:
+            answer = query(args.test_version, {
+                "past_user_inputs": past,
+                "generated_responses": generated,
+                "text": question,
+            })
+        except Exception:
+            answer = ""
         res_list.append({
             "origin_id": origin_id,
             "category": category,
