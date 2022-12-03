@@ -4,7 +4,8 @@ import pandas as pd
 from database import MongoDB
 import json
 
-version_ids = ['学姐_tsq22_2', '学长_tsq22_0']
+version_ids = ['同学_tsq22_1', '朋友_tsq22_0', '助教_tsq22_0', '老师_tsq22_0', '学弟_tsq22_0', '学妹_tsq22_0', '学姐_tsq22_2',
+               '学长_tsq22_0']
 
 
 def get_version_qa_lst(mdb, pid_lst):

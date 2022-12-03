@@ -235,8 +235,8 @@ if __name__ == '__main__':
     parser.add_argument('--course_question_num', help='每个课程的问题数量', type=int, default=20)
     parser.add_argument('--past_num', help='历史轮数数量', type=int, default=8)
     parser.add_argument('--batch_size', help='发给130b的请求', type=int, default=4)
-    parser.add_argument('--data_dir', help='数据地址', default='/data/tsq/xiaomu')
-    parser.add_argument('--test_version', help='版本', default='cpm2')
+    parser.add_argument('--data_dir', help='数据地址', default='/data/tsq/xiaomu/general_dialogue_test')
+    parser.add_argument('--test_version', help='版本', default='gpt3')
     parser.add_argument('--task', help='任务类型', default='generate_his_answer',
                         choices=['generate_his_answer', 'generate_batch_answer'])
     args = parser.parse_args()
