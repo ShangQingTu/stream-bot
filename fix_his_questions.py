@@ -1,10 +1,18 @@
-import json
+import time
 import argparse
 import os
 import requests
 import pandas as pd
 from models import build_prompt_for_glm, filter_glm
 from tqdm import tqdm
+from sklearn.metrics.pairwise import cosine_similarity
+import json
+import jieba
+from rouge_chinese import Rouge
+import pandas as pd
+import csv
+
+rouge = Rouge()
 
 version2api = {
     "cpm2": "http://localhost:5452/cpm",
@@ -43,8 +51,45 @@ def merge_chat_history(past_user_inputs, generated_responses):
             chat_history.append(past_user_inputs[i])
             chat_history.append(generated_responses[i])
     if len(chat_history) < 1:
-        return ['Hi', '你好，我是你的学习助理小木']
+        return ['Hi', '你好，我是你的学习助理小木，可以为您解释概念名词']
     return chat_history
+
+
+def test130b(texts, strategy="BaseStrategy", stop=[], regix=""):
+    # If TOPK/TOPP are 0 it defaults to greedy sampling, top-k will also override top-p
+    data = {
+        "prompt": texts,
+        "max_tokens": 64,
+        "min_tokens": 0,
+        "top_k": 1,
+        "top_p": 0,
+        "temperature": 1,
+        "seed": 1453,
+        "sampling_strategy": strategy,
+        "num_beams": 4,
+        "length_penalty": 0.9,
+        "no_repeat_ngram_size": 3,
+        "regix": regix
+    }
+
+    t = time.time()
+    res = requests.post("http://180.184.97.60:9624/generate", json=data).content.decode()
+    t = time.time() - t
+
+    res = json.loads(res)
+    # print(res['text'], end='\n\n')
+    text_res = []
+
+    for generate, text in zip(res['text'], texts):
+        generate.append('')
+        generate = generate[0]
+        # generate = "\x1B[4m" + generate.replace("[[gMASK]]", "") + "\x1B[0m"
+        if "MASK" in text:
+            text_res.append(text.replace("[gMASK]", "[[gMASK]]" + generate).replace("[MASK]", generate))
+        else:
+            text_res.append(text + generate)
+    # print("glm130b", text_res)
+    return text_res
 
 
 def query(test_version, payload):
@@ -63,28 +108,36 @@ def query(test_version, payload):
         final_response = response.json()
         return final_response
     elif test_version == "glm130b_base":
-        bsz = len(payload["contexts"])
         final_contexts = []
-        for i in range(bsz):
-            _payload = {
-                "past_user_inputs": payload["past"][i],
-                "generated_responses": payload["generated"][i],
-                "text": payload["contexts"][i]["question"],
-            }
-            prompt_str = build_prompt_for_glm(_payload, mask_token='')
-            if len(prompt_str) > 512:
-                prompt_str = prompt_str[-512:]
-            final_contexts.append(prompt_str)
-        payload = {
-            "contexts": final_contexts
-        }
-        print(f"send payload is {payload}")
-        response = requests.post(API_URL, json=payload)
-        raw_str_lst = response.json()['outputs']
-        print(f"raw_str_lst is {raw_str_lst}")
-        _lst = [filter_glm(raw_str) for raw_str in raw_str_lst]
-        _lst = [''.join(res.split()) for res in _lst]
-        return _lst, raw_str_lst
+        prompt_str = build_prompt_for_glm(payload)
+        final_contexts.append(prompt_str)
+        # bsz = len(payload["contexts"])
+        # for i in range(bsz):
+        #     _payload = {
+        #         "past_user_inputs": payload["past"][i],
+        #         "generated_responses": payload["generated"][i],
+        #         "text": payload["contexts"][i]["question"],
+        #     }
+        #     prompt_str = build_prompt_for_glm(_payload, mask_token='')
+        #     if len(prompt_str) > 512:
+        #         prompt_str = prompt_str[-512:]
+        #     final_contexts.append(prompt_str)
+        # payload = {
+        #     "contexts": final_contexts
+        # }
+        # print(f"send payload is {payload}")
+        # response = requests.post(API_URL, json=payload)
+        # raw_str_lst = response.json()['outputs']
+        # print(f"raw_str_lst is {raw_str_lst}")
+        # _lst = [filter_glm(raw_str) for raw_str in raw_str_lst]
+        # _lst = [''.join(res.split()) for res in _lst]
+        # print(final_contexts)
+        text_res_lst = test130b(final_contexts)
+        filtered = [filter_glm(t + "|A:不知道") for t in text_res_lst]
+        # print("130b filtered", filtered)
+        if len(filtered) == 1:
+            return filtered[0]
+        return filtered
     else:
         _payload = {
             "question": payload["text"],
@@ -230,6 +283,52 @@ def generate_batch_answer(args):
                 generated[i] = []
 
 
+def get_qa_answer(question, raw_answer):
+    past = []
+    generated = []
+    try:
+        answer = query(args.test_version, {
+            "past_user_inputs": past,
+            "generated_responses": generated,
+            "text": question,
+        })
+    except Exception:
+        answer = ""
+
+    hypothesis = str(answer)
+    hypothesis = ' '.join(jieba.cut(hypothesis))
+    if not hypothesis:
+        hypothesis = "我 不 知道"
+
+    reference = ' '.join(jieba.cut(str(raw_answer)))
+    scores = rouge.get_scores(hypothesis, reference)
+    res = {"question": question, "real_answer": raw_answer, "new_answer": answer,
+           "rouge-1": scores[0]["rouge-1"], "rouge-2": scores[0]["rouge-2"], "rouge-l": scores[0]["rouge-l"]}
+    return res
+
+
+def QA_pipeline_answer(args):
+    datapath = '/home/tsq/user/lcy/RocketQA/问题答案标注.xlsx'
+    raw_data = pd.read_excel(datapath, sheet_name='Sheet1')
+    questions = raw_data['question']
+    answers = raw_data['答案']
+    result = []
+    num = len(answers)
+    for q, a in tqdm(zip(questions, answers), total=num):
+        if a != 'cannot_answer':
+            score = get_qa_answer(str(q).replace('\n', ''), str(a).replace('\n', ''))
+            result.append(score)
+
+    # write result
+    outputpath = f'{args.data_dir}/scores_of_{args.test_version}.csv'
+    with open(outputpath, 'w', newline='') as f:
+        writer = csv.writer(f, delimiter='|')
+        writer.writerow(['question', 'real_answer', 'new_answer', 'rouge-1', 'rouge-2', 'rouge-l'])
+        for res in result:
+            writer.writerow([res['question'], res['real_answer'], res['new_answer'], res['rouge-1'], res['rouge-2'],
+                             res['rouge-l']])
+
+
 def check_fout(file_path):
     if os.path.exists(file_path):
         return open(file_path, 'w')
@@ -243,11 +342,15 @@ if __name__ == '__main__':
     parser.add_argument('--past_num', help='历史轮数数量', type=int, default=8)
     parser.add_argument('--batch_size', help='发给130b的请求', type=int, default=4)
     parser.add_argument('--data_dir', help='数据地址', default='/data/tsq/xiaomu/general_dialogue_test')
+    parser.add_argument('--test_file', help='数据文件', default='xiaomu_v1.csv')
     parser.add_argument('--test_version', help='版本', default='gpt3')
     parser.add_argument('--task', help='任务类型', default='generate_his_answer',
                         choices=['generate_his_answer', 'generate_batch_answer'])
     args = parser.parse_args()
     if args.task == "generate_his_answer":
-        generate_his_answer(args)
+        if args.test_file == 'xiaomu_v1.csv':
+            generate_his_answer(args)
+        elif args.test_file == '问题答案标注.xlsx':
+            QA_pipeline_answer(args)
     elif args.task == "generate_batch_answer":
         generate_batch_answer(args)
