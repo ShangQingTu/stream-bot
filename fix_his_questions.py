@@ -10,7 +10,20 @@ import json
 import jieba
 from rouge_chinese import Rouge
 import pandas as pd
+from elasticsearch import Elasticsearch
+from elasticsearch_dsl import Search
 import csv
+
+USE_MRC = False
+if USE_MRC:
+    from transformers import AutoTokenizer, AutoModelForQuestionAnswering
+
+    model_name = "chinese_pretrain_mrc_roberta_wwm_ext_large"
+    tokenizer = AutoTokenizer.from_pretrained(f"luhua/{model_name}")
+    model = AutoModelForQuestionAnswering.from_pretrained(f"luhua/{model_name}")
+    from transformers import QuestionAnsweringPipeline
+
+    qap = QuestionAnsweringPipeline(model, tokenizer)
 
 rouge = Rouge()
 
@@ -21,7 +34,18 @@ version2api = {
     "cdail_gpt": "http://0.0.0.0:9600/cdail",
     "eva": "http://0.0.0.0:9601/eva",
     "gpt3": "http://0.0.0.0:9602/gpt",
+    "bm25": "http://0.0.0.0:9200",
 }
+
+
+def search_bm(query):
+    client = Elasticsearch()
+    s = Search(using=client)
+    s = s.query("multi_match", query=query, fields=['title', 'body'])
+    res = [hit.body for hit in s]
+    res_str = "".join(res)[:500]
+    return res_str
+
 
 type2tags = {
     "introduction": [0, 1],
@@ -138,6 +162,17 @@ def query(test_version, payload):
         if len(filtered) == 1:
             return filtered[0]
         return filtered
+    elif test_version == "bm25":
+        question = payload["text"]
+        # print("q:", question)
+        text = search_bm(question)
+        # print("text", text)
+        ans = qap(
+            {'question': question,
+             'context': text}
+        )
+        # print("a:", ans)
+        return ans
     else:
         _payload = {
             "question": payload["text"],
@@ -286,14 +321,14 @@ def generate_batch_answer(args):
 def get_qa_answer(question, raw_answer):
     past = []
     generated = []
-    try:
-        answer = query(args.test_version, {
-            "past_user_inputs": past,
-            "generated_responses": generated,
-            "text": question,
-        })
-    except Exception:
-        answer = ""
+    # try:
+    answer = query(args.test_version, {
+        "past_user_inputs": past,
+        "generated_responses": generated,
+        "text": question,
+    })
+    # except Exception:
+    #     answer = ""
 
     hypothesis = str(answer)
     hypothesis = ' '.join(jieba.cut(hypothesis))
