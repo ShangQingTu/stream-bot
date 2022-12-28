@@ -13,6 +13,7 @@ import pandas as pd
 from elasticsearch import Elasticsearch
 from elasticsearch_dsl import Search
 import csv
+import re
 
 USE_MRC = False
 if USE_MRC:
@@ -318,15 +319,16 @@ def generate_batch_answer(args):
                 generated[i] = []
 
 
-def get_qa_answer(question, raw_answer):
+def get_qa_answer(question, raw_answer, answer=None):
     past = []
     generated = []
     # try:
-    answer = query(args.test_version, {
-        "past_user_inputs": past,
-        "generated_responses": generated,
-        "text": question,
-    })
+    if not answer:
+        answer = query(args.test_version, {
+            "past_user_inputs": past,
+            "generated_responses": generated,
+            "text": question,
+        })
     # except Exception:
     #     answer = ""
 
@@ -342,16 +344,69 @@ def get_qa_answer(question, raw_answer):
     return res
 
 
+def dump_or_merge_for_xiaomu(args):
+    # for rule and Little Mu
+    res_df = pd.read_csv("/data/tsq/xiaomu/dump/sample_4002_from_312000.csv")
+    _res_df = pd.read_csv("/data/tsq/xiaomu/dump/sample_4002_from_312000.csv")
+    res_df.set_index('id', inplace=True)
+    res_num = len(res_df)
+    if args.test_version == 'rule':
+        for i in range(res_num):
+            # print(res_df.iloc[i])
+            source = res_df.iloc[i]["source"]
+            _id = _res_df.iloc[i]["id"]
+            if source == 'cannot_answer':
+                res_df.at[_id, 'answer'] = "这个问题老师还没有教我～不然你再试试别的？"
+            else:
+                # noise
+                if type(res_df.at[_id, 'answer']) == str:
+                    de_noised = re.sub(r'<.*?>', "", res_df.at[_id, 'answer'])
+                    res_df.at[_id, 'answer'] = de_noised[:64]
+    else:
+        complex_qa_path = "/data/tsq/xiaomu/dump/qa_test/complex_xiaomu.csv"
+        if os.path.exists(complex_qa_path):
+            # merge
+            _df = pd.read_csv(complex_qa_path)
+            res_df.set_index('id', inplace=False)
+            for i in range(res_num):
+                source = res_df.iloc[i]["source"]
+                _id = res_df.iloc[i]["id"]
+                if source == 'cannot_answer':
+                    res_df.at[_id, 'answer'] = _df[_id, 'answer']
+                else:
+                    # noise
+                    if type(res_df.at[_id, 'answer']) == str:
+                        de_noised = re.sub(r'<.*?>', "", res_df.at[_id, 'answer'])
+                        res_df.at[_id, 'answer'] = de_noised[:64]
+        else:
+            # dump cannot_answer source questions to use current new api
+            _df = res_df[res_df["source"] == 'cannot_answer']
+            _df.to_csv(complex_qa_path)
+    # dump final result
+    res_df.to_csv(f"/data/tsq/xiaomu/dump/qa_test/{args.test_version}.csv")
+
+
 def QA_pipeline_answer(args):
     datapath = '/home/tsq/user/lcy/RocketQA/问题答案标注.xlsx'
     raw_data = pd.read_excel(datapath, sheet_name='Sheet1')
+    ids = raw_data['id']
     questions = raw_data['question']
     answers = raw_data['答案']
     result = []
     num = len(answers)
-    for q, a in tqdm(zip(questions, answers), total=num):
+    # for rule and Little Mu
+    res_df = None
+    if args.test_version == 'rule' or args.test_version == 'xiaomu':
+        res_df = pd.read_csv(f"/data/tsq/xiaomu/dump/qa_test/{args.test_version}.csv")
+        res_df.set_index('id', inplace=True)
+
+    for i, q, a in tqdm(zip(ids, questions, answers), total=num):
         if a != 'cannot_answer':
-            score = get_qa_answer(str(q).replace('\n', ''), str(a).replace('\n', ''))
+            answer = None
+            if res_df is not None:
+                # res answer from result csv
+                answer = res_df.at[i, 'answer']
+            score = get_qa_answer(str(q).replace('\n', ''), str(a).replace('\n', ''), answer)
             result.append(score)
 
     # write result
@@ -387,5 +442,7 @@ if __name__ == '__main__':
             generate_his_answer(args)
         elif args.test_file == '问题答案标注.xlsx':
             QA_pipeline_answer(args)
+        elif args.test_file == 'sample_4002_from_312000.csv':
+            dump_or_merge_for_xiaomu(args)
     elif args.task == "generate_batch_answer":
         generate_batch_answer(args)
